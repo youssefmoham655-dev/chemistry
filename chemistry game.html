@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water Chemistry Challenge</title>
+<style>
+  :root { --navy:#10233f; --blue:#1677d2; --pale:#eaf5ff; --green:#16835b; --red:#c33c48; --ink:#17263c; --muted:#617087; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--ink); background:linear-gradient(140deg,#eaf6ff,#f8fbff 48%,#e9f9f4); min-height:100vh; }
+  .wrap { width:min(900px,94%); margin:28px auto; }
+  header { background:linear-gradient(120deg,#10233f,#155da5); color:white; padding:28px; border-radius:22px; box-shadow:0 12px 32px #10233f24; }
+  header h1 { margin:0 0 8px; font-size:clamp(1.8rem,4vw,2.7rem); }
+  header p { margin:0; color:#e1efff; line-height:1.5; }
+  .panel { background:white; margin-top:18px; border-radius:20px; padding:24px; box-shadow:0 8px 24px #10233f12; }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:18px; }
+  .stat { background:#f1f7fd; border-radius:14px; padding:12px; text-align:center; }
+  .stat strong { display:block; font-size:1.35rem; color:#155da5; }
+  .stat span { font-size:.85rem; color:var(--muted); }
+  label { font-weight:700; display:block; margin:14px 0 7px; }
+  select,button { font:inherit; }
+  select { width:100%; padding:12px; border:1px solid #cbd7e5; border-radius:10px; background:white; color:var(--ink); }
+  button { cursor:pointer; border:0; border-radius:11px; padding:12px 16px; font-weight:700; transition:transform .08s,filter .15s; }
+  button:hover { filter:brightness(.97); } button:active { transform:scale(.99); }
+  .primary { background:var(--blue); color:white; }
+  .secondary { background:#eaf1f8; color:var(--ink); }
+  .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+  .eyebrow { color:var(--blue); font-size:.78rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+  #question { font-size:clamp(1.2rem,2.8vw,1.65rem); line-height:1.35; margin:9px 0 18px; }
+  .answers { display:grid; gap:10px; }
+  .answer { width:100%; text-align:left; display:flex; align-items:center; gap:12px; background:#f7faff; border:2px solid #dce7f2; color:var(--ink); padding:14px; }
+  .letter { display:grid; place-items:center; flex:0 0 32px; height:32px; border-radius:50%; background:#e2eefb; color:#155da5; font-weight:800; }
+  .answer.correct { border-color:var(--green); background:#e9f8f0; }
+  .answer.wrong { border-color:var(--red); background:#fff0f0; }
+  .answer:disabled { cursor:default; opacity:1; }
+  #feedback { margin-top:16px; padding:14px; border-radius:12px; line-height:1.5; }
+  #feedback.good { background:#e9f8f0; border:1px solid #b9e7ce; }
+  #feedback.bad { background:#fff0f0; border:1px solid #f1c2c6; }
+  .hidden { display:none !important; }
+  .progress { height:9px; background:#e6edf5; border-radius:100px; overflow:hidden; margin:12px 0 18px; }
+  #progressFill { height:100%; width:0%; background:linear-gradient(90deg,#1677d2,#23b8a2); transition:width .25s; }
+  .small { font-size:.9rem; color:var(--muted); }
+  footer { text-align:center; padding:18px; color:var(--muted); font-size:.85rem; }
+  @media(max-width:520px) { .panel{padding:18px} header{padding:22px} .stats{gap:7px} .stat{padding:10px 5px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>💧 Water Chemistry Challenge</h1>
+    <p>Explore water properties, test your chemistry knowledge, and earn points. Choose a topic and start your mission.</p>
+  </header>
+
+  <section class="panel" id="setup">
+    <h2>Set up your game</h2>
+    <label for="topic">Choose a topic</label>
+    <select id="topic">
+      <option value="all">All topics</option>
+      <option value="Water in the environment">Water in the environment</option>
+      <option value="Properties and types">Properties and types of water</option>
+      <option value="Density">Density</option>
+      <option value="Conductivity">Conductivity</option>
+      <option value="pH">pH</option>
+      <option value="Boiling point">Boiling points</option>
+      <option value="Solutes">Effects of solutes on physical properties</option>
+      <option value="Colligative properties">Colligative properties</option>
+      <option value="Boiling-point elevation">Boiling-point elevation</option>
+      <option value="Freezing-point depression">Freezing-point depression</option>
+      <option value="Osmotic pressure">Osmotic pressure and osmosis</option>
+    </select>
+    <label for="difficulty">Difficulty</label>
+    <select id="difficulty">
+      <option value="all">Mixed levels</option>
+      <option value="easy">Easy — fundamentals</option>
+      <option value="medium">Medium — concepts and calculations</option>
+      <option value="hard">Hard — applications</option>
+    </select>
+    <label for="length">Number of questions</label>
+    <select id="length">
+      <option value="10">10 questions</option>
+      <option value="15">15 questions</option>
+      <option value="all">All available questions</option>
+    </select>
+    <div class="actions"><button class="primary" id="startBtn">Start game ▶</button></div>
+    <p class="small">Each correct answer earns 10 points. After you answer, read the explanation; the next question starts automatically after 2.2 seconds, or click Next question to continue immediately.</p>
+  </section>
+
+  <section class="panel hidden" id="game">
+    <div class="eyebrow" id="topicLabel">Topic</div>
+    <div class="stats">
+      <div class="stat"><strong id="score">0</strong><span>Points</span></div>
+      <div class="stat"><strong id="progressText">1 / 10</strong><span>Question</span></div>
+      <div class="stat"><strong id="streak">0</strong><span>Current streak</span></div>
+    </div>
+    <div class="progress"><div id="progressFill"></div></div>
+    <h2 id="question">Question goes here</h2>
+    <div class="answers" id="answers"></div>
+    <div id="feedback" class="hidden" aria-live="polite"></div>
+    <div class="actions">
+      <button class="primary hidden" id="nextBtn">Next question →</button>
+      <button class="secondary" id="quitBtn">End game</button>
+    </div>
+  </section>
+
+  <section class="panel hidden" id="results">
+    <div class="eyebrow">Mission complete</div>
+    <h2 id="resultTitle">Your results</h2>
+    <div class="stats">
+      <div class="stat"><strong id="finalScore">0</strong><span>Points earned</span></div>
+      <div class="stat"><strong id="accuracy">0%</strong><span>Accuracy</span></div>
+      <div class="stat"><strong id="bestStreak">0</strong><span>Best streak</span></div>
+    </div>
+    <p id="resultMessage"></p>
+    <h3>Review your answers</h3>
+    <div id="review"></div>
+    <div class="actions">
+      <button class="primary" id="againBtn">Play again ↻</button>
+      <button class="secondary" id="homeBtn">Change settings</button>
+    </div>
+  </section>
+  <footer>Water Chemistry Challenge · Learning by doing</footer>
+</div>
+<script>
+const questions = [
+{topic:"Water in the environment",difficulty:"easy",q:"Which process moves water from the surface of oceans and lakes into the atmosphere?",opts:["Condensation","Evaporation","Precipitation","Infiltration"],a:1,why:"Evaporation changes liquid water into water vapour, powered mainly by energy from the Sun."},
+{topic:"Water in the environment",difficulty:"easy",q:"Which part of the water cycle occurs when water vapour cools into tiny liquid droplets?",opts:["Condensation","Runoff","Transpiration","Melting"],a:0,why:"Condensation forms clouds and fog when water vapour cools."},
+{topic:"Properties and types",difficulty:"easy",q:"At approximately what temperature does pure water freeze at standard atmospheric pressure?",opts:["−100 °C","0 °C","50 °C","100 °C"],a:1,why:"Pure water freezes at 0 °C (273.15 K) at standard pressure."},
+{topic:"Properties and types",difficulty:"easy",q:"Which type of water generally contains very few dissolved ions?",opts:["Seawater","Hard water","Distilled water","Mineral water"],a:2,why:"Distillation separates water from many dissolved substances, producing water with low ion content."},
+{topic:"Properties and types",difficulty:"medium",q:"Why is water often called a good solvent for ionic and polar substances?",opts:["It is nonpolar","Its molecules are polar","It has no hydrogen bonds","It is always acidic"],a:1,why:"Water's polar molecules interact with ions and many polar molecules, helping them dissolve."},
+{topic:"Density",difficulty:"easy",q:"A sample has a mass of 40 g and a volume of 50 mL. What is its density?",opts:["0.8 g/mL","1.25 g/mL","2 g/mL","10 g/mL"],a:0,why:"Density = mass ÷ volume = 40 g ÷ 50 mL = 0.8 g/mL."},
+{topic:"Density",difficulty:"medium",q:"A liquid has a mass of 90 g and density of 1.5 g/mL. What is its volume?",opts:["60 mL","135 mL","91.5 mL","0.0167 mL"],a:0,why:"Volume = mass ÷ density = 90 ÷ 1.5 = 60 mL."},
+{topic:"Density",difficulty:"easy",q:"An object with an average density of 1.2 g/mL is placed in water of density about 1.0 g/mL. What will it tend to do?",opts:["Float","Sink","Turn into gas","Become less dense automatically"],a:1,why:"An object denser than the surrounding liquid tends to sink, provided it does not dissolve or react."},
+{topic:"Conductivity",difficulty:"easy",q:"Which sample will usually conduct electricity best?",opts:["Distilled water","Sugar solution","Sodium chloride solution","Pure paraffin oil"],a:2,why:"Dissolved sodium chloride forms mobile Na⁺ and Cl⁻ ions that carry electric current."},
+{topic:"Conductivity",difficulty:"medium",q:"Why does a sugar solution usually conduct electricity poorly compared with salt water at similar concentration?",opts:["Sugar produces no freely moving ions","Sugar is a metal","Salt water contains no particles","Sugar makes water freeze"],a:0,why:"Sugar dissolves mainly as neutral molecules; sodium chloride separates into mobile ions."},
+{topic:"pH",difficulty:"easy",q:"A water sample has a pH of 3. It is:",opts:["Acidic","Neutral","Basic","Always pure water"],a:0,why:"At ordinary introductory chemistry conditions, pH below 7 is acidic."},
+{topic:"pH",difficulty:"medium",q:"At 25 °C, what is the approximate pH of neutral pure water?",opts:["0","5","7","14"],a:2,why:"At 25 °C, neutral water has pH 7, with equal hydrogen and hydroxide ion concentrations."},
+{topic:"pH",difficulty:"medium",q:"A solution changes from pH 4 to pH 3. How does its hydrogen-ion concentration change?",opts:["It becomes 10 times higher","It becomes 10 times lower","It stays the same","It becomes 100 times lower"],a:0,why:"Each one-unit decrease in pH corresponds to a tenfold increase in hydrogen-ion concentration."},
+{topic:"Boiling point",difficulty:"easy",q:"At standard atmospheric pressure, pure water boils at approximately:",opts:["0 °C","25 °C","100 °C","212 °C"],a:2,why:"Pure water boils at 100 °C (212 °F) at standard atmospheric pressure."},
+{topic:"Boiling point",difficulty:"medium",q:"What happens to the boiling point of water at a high-altitude location where atmospheric pressure is lower?",opts:["It usually decreases","It always rises","It stays exactly 100 °C","Water cannot boil"],a:0,why:"Lower external pressure means water reaches its boiling condition at a lower temperature."},
+{topic:"Solutes",difficulty:"medium",q:"What usually happens to water's boiling point when a nonvolatile solute such as salt is dissolved in it?",opts:["It decreases","It increases","It becomes 0 °C","It cannot boil"],a:1,why:"A dissolved nonvolatile solute raises the boiling point compared with pure water at the same pressure."},
+{topic:"Solutes",difficulty:"medium",q:"What usually happens to water's freezing point when a suitable amount of salt dissolves in it?",opts:["It rises","It falls","It must become 100 °C","It never changes"],a:1,why:"Dissolved solute lowers the freezing point; this is why salt can help melt ice under suitable conditions."},
+{topic:"Colligative properties",difficulty:"easy",q:"Colligative properties depend mainly on what?",opts:["The colour of the solute","The number of dissolved particles","The shape of the container","The smell of the solution"],a:1,why:"Colligative effects depend mainly on the number of dissolved solute particles, rather than their chemical identity."},
+{topic:"Colligative properties",difficulty:"medium",q:"Which is NOT a standard colligative property of dilute solutions?",opts:["Boiling-point elevation","Freezing-point depression","Osmotic pressure","Colour of the solution"],a:3,why:"The four commonly taught colligative properties are vapour-pressure lowering, boiling-point elevation, freezing-point depression, and osmotic pressure."},
+{topic:"Boiling-point elevation",difficulty:"medium",q:"For a dilute ideal solution, which equation describes boiling-point elevation?",opts:["ΔTb = iKb m","ΔTf = iKf m","π = n/V","ρ = V/m"],a:0,why:"Boiling-point elevation is ΔTb = iKb m, where i is the van ’t Hoff factor, Kb the ebullioscopic constant, and m the molality."},
+{topic:"Boiling-point elevation",difficulty:"hard",q:"At equal molality in an ideal dilute solution, which is expected to have the larger boiling-point elevation: glucose or fully dissociated sodium chloride?",opts:["Glucose","Sodium chloride","They must be identical","Neither changes boiling point"],a:1,why:"Glucose stays mainly as one dissolved particle per molecule, while NaCl ideally forms about two ions. More particles produce a larger colligative effect."},
+{topic:"Freezing-point depression",difficulty:"medium",q:"Which equation describes freezing-point depression?",opts:["ΔTf = iKf m","ΔTb = iKb m","pH = −log[OH⁻]","ρ = mV"],a:0,why:"Freezing-point depression is ΔTf = iKf m."},
+{topic:"Freezing-point depression",difficulty:"hard",q:"If the effective dissolved-particle concentration doubles in a dilute ideal solution, what happens to the freezing-point depression?",opts:["It approximately doubles","It halves","It becomes zero","It is unrelated to concentration"],a:0,why:"Since ΔTf = iKf m, doubling effective particle concentration approximately doubles the freezing-point depression."},
+{topic:"Osmotic pressure",difficulty:"easy",q:"In osmosis, water tends to move across a semipermeable membrane toward:",opts:["The side with higher effective solute concentration","The side with no solute in every case","The side with the larger container","The side with higher temperature only"],a:0,why:"Water tends to move toward the side with higher effective solute concentration through a membrane permeable to water."},
+{topic:"Osmotic pressure",difficulty:"medium",q:"What is osmotic pressure?",opts:["Pressure needed to stop net osmosis","Pressure of water vapour only","The mass per unit volume","The temperature at boiling"],a:0,why:"Osmotic pressure is the pressure required to prevent net solvent movement by osmosis across a semipermeable membrane."},
+{topic:"Osmotic pressure",difficulty:"hard",q:"For a dilute ideal solution, which relation estimates osmotic pressure?",opts:["π = iMRT","π = m/V","π = Kf/ΔT","π = pH × 14"],a:0,why:"The van ’t Hoff equation is π = iMRT, where M is molar concentration, R is the gas constant, and T is absolute temperature."},
+{topic:"Conductivity",difficulty:"hard",q:"Two salt solutions contain the same salt, but one is more concentrated. In general, which conducts better?",opts:["The more concentrated solution, if other conditions are comparable","The more dilute solution always","Both always conduct exactly the same","Neither conducts"],a:0,why:"More dissolved ions generally increase conductivity in comparable solutions, although the relationship is not perfectly linear at all concentrations."},
+{topic:"Properties and types",difficulty:"medium",q:"Why does ice float on liquid water under ordinary conditions?",opts:["Ice is less dense than liquid water","Ice is always warmer","Ice has no molecules","Water becomes nonpolar when frozen"],a:0,why:"The open hydrogen-bonded structure of ordinary ice makes it less dense than liquid water."}
+,{topic:"Density",difficulty:"hard",q:"A solution has a mass of 156 g and a volume of 150 mL. Using ρ = m/V, what is its density?",opts:["1.04 g/mL","0.962 g/mL","6.00 g/mL","23,400 g/mL"],a:0,why:"ρ = m/V = 156 g ÷ 150 mL = 1.04 g/mL. Keep the units consistent."}
+,{topic:"pH",difficulty:"hard",q:"Use pH = −log₁₀[H⁺]. If [H⁺] = 1.0 × 10⁻⁴ mol/L, what is the pH?",opts:["4.00","−4.00","10.00","0.0001"],a:0,why:"pH = −log₁₀(10⁻⁴) = 4.00."}
+,{topic:"pH",difficulty:"hard",q:"A solution has pH = 5. What is its hydrogen-ion concentration?",opts:["1 × 10⁻⁵ mol/L","5 mol/L","1 × 10⁵ mol/L","1 × 10⁻⁹ mol/L"],a:0,why:"Rearrange pH = −log₁₀[H⁺]: [H⁺] = 10⁻ᵖᴴ = 10⁻⁵ mol/L."}
+,{topic:"Boiling-point elevation",difficulty:"hard",q:"Use ΔTb = iKb m. For 0.50 mol/kg glucose in water, Kb = 0.512 °C·kg/mol and i = 1. What is ΔTb?",opts:["0.256 °C","1.024 °C","0.512 °C","0.0256 °C"],a:0,why:"ΔTb = iKb m = 1 × 0.512 × 0.50 = 0.256 °C."}
+,{topic:"Boiling-point elevation",difficulty:"hard",q:"Use ΔTb = iKb m. For an ideal 0.20 mol/kg NaCl solution with i ≈ 2 and Kb = 0.512 °C·kg/mol, estimate ΔTb.",opts:["0.205 °C","0.102 °C","0.512 °C","2.56 °C"],a:0,why:"ΔTb = 2 × 0.512 × 0.20 = 0.2048 °C ≈ 0.205 °C."}
+,{topic:"Freezing-point depression",difficulty:"hard",q:"Use ΔTf = iKf m. For 0.30 mol/kg glucose, Kf = 1.86 °C·kg/mol and i = 1. What is the freezing-point depression?",opts:["0.558 °C","6.20 °C","1.86 °C","0.167 °C"],a:0,why:"ΔTf = iKf m = 1 × 1.86 × 0.30 = 0.558 °C. The solution freezes near −0.558 °C at standard pressure."}
+,{topic:"Freezing-point depression",difficulty:"hard",q:"An ideal 0.15 mol/kg CaCl₂ solution fully dissociates into 3 ions per formula unit. If Kf = 1.86 °C·kg/mol, estimate ΔTf.",opts:["0.837 °C","0.279 °C","1.86 °C","0.093 °C"],a:0,why:"For ideal CaCl₂, i ≈ 3. ΔTf = 3 × 1.86 × 0.15 = 0.837 °C."}
+,{topic:"Osmotic pressure",difficulty:"hard",q:"Use π = iMRT. An ideal solution has i = 1, M = 0.10 mol/L, T = 300 K, and R = 0.0821 L·atm·mol⁻¹·K⁻¹. Find π.",opts:["2.46 atm","0.246 atm","24.6 atm","3.00 atm"],a:0,why:"π = iMRT = 1 × 0.10 × 0.0821 × 300 = 2.463 atm ≈ 2.46 atm."}
+,{topic:"Osmotic pressure",difficulty:"hard",q:"At the same temperature and ideal behaviour, solution A is 0.10 M glucose (i = 1) and solution B is 0.10 M NaCl (i ≈ 2). Which has the higher osmotic pressure?",opts:["Solution B, about twice as high","Solution A, about twice as high","They are equal","Both have zero osmotic pressure"],a:0,why:"π = iMRT. With equal M and T, the solution with the larger i has the greater osmotic pressure; ideal NaCl has i ≈ 2."}
+,{topic:"Colligative properties",difficulty:"hard",q:"Raoult's law for an ideal solution is Psolvent = Xsolvent P°solvent. If Xwater = 0.80 and pure water vapour pressure is 25.0 kPa, what is the solution vapour pressure?",opts:["20.0 kPa","31.25 kPa","5.0 kPa","0.80 kPa"],a:0,why:"Pwater = Xwater P°water = 0.80 × 25.0 = 20.0 kPa."}
+,{topic:"Colligative properties",difficulty:"hard",q:"A solution contains 0.20 mol solute in 0.50 kg solvent. What is its molality m?",opts:["0.40 mol/kg","0.10 mol/kg","2.5 mol/kg","0.70 mol/kg"],a:0,why:"Molality m = moles of solute ÷ kilograms of solvent = 0.20 ÷ 0.50 = 0.40 mol/kg."}
+,{topic:"Solutes",difficulty:"hard",q:"An ideal solution has a freezing-point depression of 1.116 °C. If Kf = 1.86 °C·kg/mol and i = 1, what is its molality?",opts:["0.600 mol/kg","2.08 mol/kg","0.300 mol/kg","3.00 mol/kg"],a:0,why:"From ΔTf = iKf m, m = ΔTf/(iKf) = 1.116/(1 × 1.86) = 0.600 mol/kg."}
+,{topic:"Boiling point",difficulty:"hard",q:"A liquid boils when its vapour pressure equals the external pressure. At a high-altitude location, the external pressure is lower. What follows?",opts:["It reaches its boiling point at a lower temperature","It must boil at a higher temperature","Its freezing point becomes 100 °C","Its vapour pressure becomes zero"],a:0,why:"Boiling occurs when vapour pressure matches external pressure. A lower external pressure is reached at a lower temperature."}
+
+];
+
+let deck=[], index=0, score=0, streak=0, bestStreak=0, history=[], locked=false;
+const $ = id => document.getElementById(id);
+function shuffle(arr){ for(let i=arr.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
+function startGame(){
+  const topic=$("topic").value, diff=$("difficulty").value, length=$("length").value;
+  deck=questions.filter(q=>(topic==="all"||q.topic===topic)&&(diff==="all"||q.difficulty===diff));
+  if(!deck.length){alert("No questions match that selection. Try another topic or difficulty.");return;}
+  shuffle(deck); if(length!=="all") deck=deck.slice(0,Math.min(Number(length),deck.length));
+  index=0;score=0;streak=0;bestStreak=0;history=[];locked=false;
+  $("setup").classList.add("hidden");$("results").classList.add("hidden");$("game").classList.remove("hidden");
+  renderQuestion();
+}
+function renderQuestion(){
+  locked=false;const q=deck[index];
+  $("topicLabel").textContent=q.topic+" · "+q.difficulty;
+  $("score").textContent=score;$("streak").textContent=streak;
+  $("progressText").textContent=(index+1)+" / "+deck.length;
+  $("progressFill").style.width=(index/deck.length*100)+"%";
+  $("question").textContent=q.q;$("answers").innerHTML="";$("feedback").className="hidden";$("feedback").textContent="";$("nextBtn").classList.add("hidden");
+  q.opts.forEach((opt,i)=>{
+    const b=document.createElement("button");b.className="answer";
+    const letter=document.createElement("span");letter.className="letter";letter.textContent=String.fromCharCode(65+i);
+    const text=document.createElement("span");text.textContent=opt;b.append(letter,text);
+    b.addEventListener("click",()=>choose(i));$("answers").appendChild(b);
+  });
+}
+function choose(selected){
+  if(locked)return;locked=true;const q=deck[index],correct=selected===q.a;
+  [...$("answers").children].forEach((b,i)=>{b.disabled=true;if(i===q.a)b.classList.add("correct");if(i===selected&&!correct)b.classList.add("wrong");});
+  if(correct){score+=10;streak++;bestStreak=Math.max(bestStreak,streak);}else streak=0;
+  history.push({q:q.q,selected:q.opts[selected],answer:q.opts[q.a],correct,why:q.why});
+  $("score").textContent=score;$("streak").textContent=streak;
+  $("feedback").className=correct?"good":"bad";
+  $("feedback").innerHTML="<strong>"+(correct?"Correct! +10 points":"Not quite.")+"</strong><br>"+q.why;
+  $("nextBtn").textContent=index===deck.length-1?"View results ✓":"Next question →";
+  $("nextBtn").classList.remove("hidden");
+  // Auto-advance after showing the explanation; the player can also click Next immediately.
+  const answeredIndex = index;
+  window.setTimeout(() => {
+    if (locked && index === answeredIndex && !$("game").classList.contains("hidden")) nextQuestion();
+  }, 2200);
+}
+function nextQuestion(){if(!locked)return;locked=false;index++;if(index>=deck.length)showResults();else renderQuestion();}
+function showResults(){
+  $("game").classList.add("hidden");$("results").classList.remove("hidden");
+  const total=history.length, right=history.filter(h=>h.correct).length, pct=Math.round(right/total*100);
+  $("finalScore").textContent=score;$("accuracy").textContent=pct+"%";$("bestStreak").textContent=bestStreak;
+  $("resultTitle").textContent=pct>=80?"Excellent work!":pct>=50?"Good progress!":"Keep practising!";
+  $("resultMessage").textContent=`You answered ${right} out of ${total} questions correctly. Review the explanations below, then play again to improve your score.`;
+  $("review").innerHTML="";
+  history.forEach((h,i)=>{
+    const div=document.createElement("div");div.style.cssText="padding:12px 0;border-bottom:1px solid #e3ebf4;line-height:1.5";
+    const title=document.createElement("strong");title.textContent=`${i+1}. ${h.correct?"✓ Correct":"✗ Incorrect"} — ${h.q}`;
+    const ans=document.createElement("div");ans.textContent="Correct answer: "+h.answer;
+    const why=document.createElement("div");why.className="small";why.textContent=h.why;
+    div.append(title,ans,why);$("review").appendChild(div);
+  });
+}
+$("startBtn").addEventListener("click",startGame);
+$("nextBtn").addEventListener("click",nextQuestion);
+$("quitBtn").addEventListener("click",()=>{if(confirm("End this game and see your results?"))showResults();});
+$("againBtn").addEventListener("click",startGame);
+$("homeBtn").addEventListener("click",()=>{$("results").classList.add("hidden");$("setup").classList.remove("hidden");});
+</script>
+</body>
+</html>
